@@ -2,7 +2,9 @@
 
 The `query-docker-registry.sh` script gives output that describes which docker images come from which repositories.
 
-This is done by fetching a list of images for an organisation from the Docker Registry API, and then fetching the JSON data for each image. The `org.opencontainers.image.source` label is use to find which repository an image comes from.
+This is done by fetching a list of images for an organisation from the Docker Registry API, and then fetching the JSON data for each image. The `org.opencontainers.image.source` label is used to find which repository an image comes from.
+
+Currently, the script only works for Docker Hub, and the Docker Hub API. It has been hard-coded to use `hub.docker.com`, `auth.docker.io`, and `index.docker.io`.
 
 The JSON that is output is an object with key/value pairs.
 The keys are the names of the docker image.
