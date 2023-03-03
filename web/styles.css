@@ -4,6 +4,14 @@ title {
     display: inline
 }
 
+body {
+    font-family: Roboto, Arial, Helvetica, sans-serif;
+}
+
+code, textarea {
+    font-family: 'Ubuntu Mono', monospace;
+}
+
 textarea {
     background-color: #f5f5f5;
     color: #333;
