@@ -12,6 +12,21 @@ When creating docker containers, it is not uncommon to have several low-level "b
 
 It would be nice to see which images extend which. This project aims to do that.
 
+## Usage
+
+Gathering the required data and creating the diagram, have been split into separate steps. The scripts in `cli/` are meant to be run locally.
+They gather the required data and output it as JSON files.
+The web application in `web/` is meant to be run in a browser and takes the JSON files as input.
+
+In order to create a diagram, the following steps need to be taken:
+
+1. Run the `docker-grep.sh` script to create a JSON file with the results of `grep`ing all `Dockerfile`s in a group of repositories.
+2. Run the `dockerhub-fetch.sh` script to create a JSON file with the results of querying the Docker Registry API.
+3. Visit `web/index.html` in a browser and input the two JSON files.
+4. View the resulting diagram.
+
+Optionally, the JSON and diagram code can be manually edited to make corrections or add additional information.
+
 [maintained-shield]: https://img.shields.io/maintenance/yes/2023.svg
 [project-stage-badge: Development]: https://img.shields.io/badge/Project%20Stage-Development-yellowgreen.svg
 [project-stage-page]: https://blog.pother.ca/project-stages/
