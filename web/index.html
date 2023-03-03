@@ -8,7 +8,10 @@
 
 <link rel="icon" href="https://favicon.potherca.workers.dev/25"/>
 
-<article>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/picnic">
+<link rel="stylesheet" href="styles.css">
+
+<article class="container flex one half off-fourth">
   <header>
     <h1><title>Docker Images Dependency Diagram</title></h1>
   </header>
@@ -20,7 +23,7 @@
           <a href="https://github.com/potherca/docker-diagram"><code>docker-diagram</code></a>
           to create the PlantUML which can be used to display a diagram.
         </legend>
-        <div>
+        <div class="container flex">
           <label>Repositories<textarea name="repo.json"></textarea></label>
           <label>DockerHub Names<textarea name="hub.json"></textarea></label>
         </div>
@@ -30,7 +33,7 @@
   </section>
   <section>
     <form data-form="plantuml">
-      <label><textarea readonly></textarea></label>
+      <label><textarea class="result" readonly></textarea></label>
       <button disabled>Generate Diagram Code</button>
     </form>
   </section>
