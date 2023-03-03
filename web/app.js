@@ -35,6 +35,10 @@ plantumlForm.addEventListener('submit', event => {
     const plantumlJson = JSON.parse(blob)
 
     const plantuml = parsePlantumlJson(plantumlJson)
+    const diagram = compress2(plantuml);
 
     container.querySelector('textarea').value = plantuml
+    container.insertAdjacentHTML('beforeend',
+        `<a href="https://www.plantuml.com/plantuml/uml/${diagram}" target="_blank">View Diagram</a>`
+    )
 })
