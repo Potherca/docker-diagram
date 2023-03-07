@@ -112,11 +112,53 @@ function createPlantUmlJson(fromRepos, imageToRepoMap) {
     return relationships
 }
 
-function parsePlantumlJson(plantumlJson) {
-    let plantuml = `@startuml\n`
-    plantuml += `@enduml\n`
+function createPlantUmlDiagram(plantumlJson) {
+    const nodes = []
+    const relationships = []
 
-    return plantuml
+    plantumlJson.forEach(relationship => {
+
+        let from = relationship.from.image
+        let to = relationship.to.image
+
+        if (! from) {
+            from = relationship.from.repo
+        }
+
+        if (! to) {
+            to = relationship.to.repo
+        }
+
+        relationships.push(`${slug(from)} --> ${slug(to)}`)
+    })
+
+    function makeNode(node) {
+        if (node.image && node.repo) {
+            return `
+            card "${node.repo}" as ${slug(node.repo)} {
+              node "${node.image}" as ${slug(node.image)}
+            }
+            `
+        } else if (node.image) {
+            return `node "${node.image}" as ${slug(node.image)}`
+        } else if (node.repo) {
+            return `card "${node.repo}" as ${slug(node.repo)}`
+        } else {
+            throw new Error(`Node has neither image nor repo: ${node}`)
+        }
+    }
+
+    plantumlJson.forEach(relationship => {
+        nodes.push(makeNode(relationship.from))
+        nodes.push(makeNode(relationship.to))
+    })
+
+    return `@startuml
+        left to right direction
+        ${nodes.join('\n')}
+        ${relationships.join('\n')}
+        @enduml
+    `
 }
 
 /**
@@ -182,7 +224,7 @@ plantumlForm.addEventListener('submit', event => {
     const blob = event.target.querySelector('textarea').value.trim()
     const plantumlJson = JSON.parse(blob)
 
-    const plantuml = parsePlantumlJson(plantumlJson)
+    const plantuml = createPlantUmlDiagram(plantumlJson)
     const diagram = compress2(plantuml);
 
     container.querySelector('textarea').value = plantuml
