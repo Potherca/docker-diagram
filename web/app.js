@@ -1,6 +1,7 @@
-const container = document.querySelector('#container')
-const form = document.querySelector('[data-form="json"]')
-const plantumlForm = document.querySelector('[data-form="plantuml"]')
+const container = document.querySelector('#diagram')
+const codeForm = document.querySelector('[data-form="diagram-code"]')
+const cliForm = document.querySelector('[data-form="cli-json"]')
+const plantumlForm = document.querySelector('[data-form="plantuml-json"]')
 
 const removeDockerTag = image => image.split(':')[0];
 
@@ -206,7 +207,7 @@ function normalizeUrl(repo) {
     return normalised
 }
 
-form.addEventListener('submit', event => {
+cliForm.addEventListener('submit', event => {
     event.preventDefault()
 
     const fromRepos = JSON.parse(event.target.querySelector('[name="repo.json"]').value.trim())
@@ -214,7 +215,7 @@ form.addEventListener('submit', event => {
 
     const plantumlJson = createPlantUmlJson(fromRepos, imageToRepoMap)
 
-    document.querySelector('.result').value = JSON.stringify(plantumlJson, null, 4)
+    plantumlForm.querySelector('textarea').value = JSON.stringify(plantumlJson, null, 4)
     plantumlForm.querySelector('button').attributes.removeNamedItem('disabled')
 })
 
@@ -224,11 +225,19 @@ plantumlForm.addEventListener('submit', event => {
     const blob = event.target.querySelector('textarea').value.trim()
     const plantumlJson = JSON.parse(blob)
 
-    const plantuml = createPlantUmlDiagram(plantumlJson)
+    codeForm.querySelector('textarea').value = createPlantUmlDiagram(plantumlJson)
+    codeForm.querySelector('button').attributes.removeNamedItem('disabled')
+})
+
+codeForm.addEventListener('submit', event => {
+    event.preventDefault()
+
+    const plantuml = event.target.querySelector('textarea').value.trim()
     const diagram = compress2(plantuml);
 
-    container.querySelector('textarea').value = plantuml
-    container.insertAdjacentHTML('beforeend',
-        `<a href="https://www.plantuml.com/plantuml/uml/${diagram}" target="_blank">View Diagram</a>`
-    )
+    container.insertAdjacentHTML('afterbegin', `
+        <p><a href="https://www.plantuml.com/plantuml/uml/${diagram}" target="_blank">View Diagram on PlantUML.com</a></p>
+        <img src="https://www.plantuml.com/plantuml/svg/${diagram}"  alt="" />
+    `)
+
 })

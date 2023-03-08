@@ -1,20 +1,28 @@
 @charset "UTF-8";
 
-title {
-    display: inline
-}
-
 body {
     font-family: Roboto, Arial, Helvetica, sans-serif;
 }
 
-code, textarea {
+code {
     font-family: 'Ubuntu Mono', monospace;
+}
+
+img {
+    border: 1px solid #EEE;
+}
+p {
+    text-align: right;
 }
 
 textarea {
     background-color: #f5f5f5;
     color: #333;
+    font-family: 'Ubuntu Mono', monospace;
     height: 20em;
     white-space: pre;
+}
+
+title {
+    display: inline
 }
