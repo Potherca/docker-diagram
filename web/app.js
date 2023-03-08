@@ -126,6 +126,42 @@ function addFrameToProperties(repo, properties) {
     return properties
 }
 
+function guessOrganisation(plantumlJson) {
+    const candidates = []
+
+    plantumlJson.forEach(relationship => {
+        if (relationship.from.repo) {
+            const subject = relationship.from.repo.split('/')[1]
+            candidates.push(subject)
+        }
+
+        if (relationship.to.repo) {
+            const subject = relationship.to.repo.split('/')[1]
+            candidates.push(subject)
+        }
+
+        if (relationship.from.image) {
+            const subject = relationship.from.image.split('/')[0]
+            candidates.push(subject)
+        }
+
+        if (relationship.to.image) {
+            const subject = relationship.to.image.split('/')[0]
+            candidates.push(subject)
+        }
+    })
+
+    const counts = {};
+    for (const num of candidates) {
+        counts[num] = counts[num] ? counts[num] + 1 : 1;
+    }
+
+    const sortedCandidates = Object.keys(counts)
+        .sort((a, b) => candidates[a] - candidates[b]);
+
+    return candidates[0]
+}
+
 function createPlantUmlDiagram(plantumlJson) {
 
     const frames = {}
@@ -149,11 +185,21 @@ function createPlantUmlDiagram(plantumlJson) {
     })
 
     let unknownCounter = 0
-    function makeNodeProperties(node) {
+    function makeNodeProperties(node, organisation) {
         let properties = {};
 
         let image = node.image
         let repo = node.repo
+
+        if (! image) {
+            properties.class = 'unknown'
+        } else if (image === 'scratch') {
+            properties.class = 'scratch'
+        }else if (image.includes(`${organisation}/`)) {
+            properties.class = organisation
+        } else {
+            properties.class = 'vendor'
+        }
 
         if (! image && ! repo) {
             throw new Error(`Node has neither image nor repo: ${node}`)
@@ -178,9 +224,11 @@ function createPlantUmlDiagram(plantumlJson) {
         return properties
     }
 
+    const organisation = guessOrganisation(plantumlJson)
+
     plantumlJson.forEach(relationship => {
-        nodes.push(makeNodeProperties(relationship.from))
-        nodes.push(makeNodeProperties(relationship.to))
+        nodes.push(makeNodeProperties(relationship.from, organisation))
+        nodes.push(makeNodeProperties(relationship.to, organisation))
     })
 
     nodes.forEach(node => {
@@ -223,7 +271,11 @@ function createPlantUmlDiagram(plantumlJson) {
                     plantuml += `card "${node.repo}" as ${node.repoSlug} {\n`
                 }
 
-                plantuml += `node "${node.image}" as ${node.imageSlug}\n`
+                plantuml += `node "${node.image}" as ${node.imageSlug}`
+                if (node.class) {
+                    plantuml += ` <<${node.class.toUpperCase()}>>`
+                }
+                plantuml += `\n`
 
                 if (node.repo) {
                     plantuml += '}\n'
