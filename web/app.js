@@ -169,7 +169,6 @@ function createPlantUmlDiagram(plantumlJson) {
     const relationships = []
 
     plantumlJson.forEach(relationship => {
-
         let from = relationship.from.image
         let to = relationship.to.image
 
@@ -181,7 +180,7 @@ function createPlantUmlDiagram(plantumlJson) {
             to = relationship.to.repo
         }
 
-        relationships.push(`${slug(from)} --> ${slug(to)}`)
+        relationships.push(`${slug(from)} -u-> ${slug(to)}`)
     })
 
     let unknownCounter = 0
@@ -253,6 +252,27 @@ function createPlantUmlDiagram(plantumlJson) {
     plantuml = `
 @startuml
     left to right direction
+    hide stereotype
+
+    skinparam {
+        node<<SCRATCH>> {
+            backgroundColor #2496ED
+            fontColor #FFFFFF
+            borderColor #FFFFFF
+        }
+    
+        node<<UNKNOWN>> {
+            backgroundColor #FFFFFF
+            fontColor red
+            borderColor darkred
+        }
+    
+        node<<VENDOR>> {
+            backgroundColor #FFFFFF
+            fontColor #2496ED
+            borderColor #2496ED
+        }
+    }
     `
 
     Object.entries(frames).forEach(([frame, rectangles]) => {
