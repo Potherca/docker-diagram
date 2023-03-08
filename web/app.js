@@ -113,7 +113,22 @@ function createPlantUmlJson(fromRepos, imageToRepoMap) {
     return relationships
 }
 
+function addFrameToProperties(repo, properties) {
+    const regExp = new RegExp('^([^.]+\\.[^/]+)/([^/]+)/([^/]+)')
+    const supportedDomains = ['github.com', 'gitlab.com', 'bitbucket.org']
+
+    let match = repo.match(regExp);
+    if (supportedDomains.includes(match[1])) {
+        properties.domain = match[1]
+        properties.org = match[2]
+    }
+
+    return properties
+}
+
 function createPlantUmlDiagram(plantumlJson) {
+
+    const frames = {}
     const nodes = []
     const relationships = []
 
@@ -133,33 +148,105 @@ function createPlantUmlDiagram(plantumlJson) {
         relationships.push(`${slug(from)} --> ${slug(to)}`)
     })
 
-    function makeNode(node) {
-        if (node.image && node.repo) {
-            return `
-            card "${node.repo}" as ${slug(node.repo)} {
-              node "${node.image}" as ${slug(node.image)}
-            }
-            `
-        } else if (node.image) {
-            return `node "${node.image}" as ${slug(node.image)}`
-        } else if (node.repo) {
-            return `card "${node.repo}" as ${slug(node.repo)}`
-        } else {
+    let unknownCounter = 0
+    function makeNodeProperties(node) {
+        let properties = {};
+
+        let image = node.image
+        let repo = node.repo
+
+        if (! image && ! repo) {
             throw new Error(`Node has neither image nor repo: ${node}`)
+        } else if (! image) {
+            properties.image = '(?)'
+            properties.imageSlug = `unknown_${++unknownCounter}`
+            properties.repo = repo
+            properties.repoSlug = slug(repo)
+            properties = addFrameToProperties(repo, properties);
+        } else if (! repo) {
+            properties.image = image
+            properties.imageSlug = slug(image)
+        } else {
+            properties.image = image
+            properties.imageSlug = slug(image)
+            properties.repo = repo
+            properties.repoSlug = slug(repo)
+
+            properties = addFrameToProperties(repo, properties);
         }
+
+        return properties
     }
 
     plantumlJson.forEach(relationship => {
-        nodes.push(makeNode(relationship.from))
-        nodes.push(makeNode(relationship.to))
+        nodes.push(makeNodeProperties(relationship.from))
+        nodes.push(makeNodeProperties(relationship.to))
     })
 
-    return `@startuml
-        left to right direction
-        ${nodes.join('\n')}
-        ${relationships.join('\n')}
-        @enduml
+    nodes.forEach(node => {
+        let domain = node.domain || ''
+        let vendor = node.org || ''
+
+        // Group by domain (these can be used to create `frame`s
+        if (! frames[domain]) {
+            frames[domain] = []
+        }
+
+        // Group by organisation (these can be used to create `rectangle`s inside frames)
+        if (!frames[domain][vendor]) {
+            frames[domain][vendor] = []
+        }
+
+        frames[domain][vendor].push(node)
+    })
+
+    let plantuml
+
+    plantuml = `
+@startuml
+    left to right direction
     `
+
+    Object.entries(frames).forEach(([frame, rectangles]) => {
+        if (frame) {
+            plantuml += `frame "${frame}" as ${slug(frame)} {\n`
+        }
+
+        Object.entries(rectangles).forEach(([rectangle, nodes]) => {
+
+            if (rectangle) {
+                plantuml += `rectangle "${rectangle}" as ${slug(rectangle)} {\n`
+            }
+
+            nodes.forEach(node => {
+                if (node.repo) {
+                    plantuml += `card "${node.repo}" as ${node.repoSlug} {\n`
+                }
+
+                plantuml += `node "${node.image}" as ${node.imageSlug}\n`
+
+                if (node.repo) {
+                    plantuml += '}\n'
+                }
+            })
+
+            if (rectangle) {
+                plantuml += '}\n'
+            }
+        })
+
+        if (frame) {
+            plantuml += '}\n'
+        }
+    })
+
+    plantuml +=`
+        ${relationships.join('\n')}
+
+        @enduml
+    `;
+
+    return plantuml
 }
 
 /**
