@@ -1,6 +1,7 @@
-const container = document.querySelector('#diagram')
-const codeForm = document.querySelector('[data-form="diagram-code"]')
+const archivedForm = document.querySelector('[name="archived.json"]');
 const cliForm = document.querySelector('[data-form="cli-json"]')
+const codeForm = document.querySelector('[data-form="diagram-code"]')
+const container = document.querySelector('#diagram')
 const plantumlForm = document.querySelector('[data-form="plantuml-json"]')
 
 const removeDockerTag = image => image.split(':')[0];
@@ -162,7 +163,7 @@ function guessOrganisation(plantumlJson) {
     return candidates[0]
 }
 
-function createPlantUmlDiagram(plantumlJson) {
+function createPlantUmlDiagram(plantumlJson, archivedRepos) {
 
     const frames = {}
     const nodes = []
@@ -255,22 +256,30 @@ function createPlantUmlDiagram(plantumlJson) {
     hide stereotype
 
     skinparam {
+        /' These colors have been taken from the Docker(Hub) styles'/
         node<<SCRATCH>> {
             backgroundColor #2496ED
             fontColor #FFFFFF
             borderColor #FFFFFF
         }
-    
-        node<<UNKNOWN>> {
-            backgroundColor #FFFFFF
-            fontColor red
-            borderColor darkred
-        }
-    
+
         node<<VENDOR>> {
             backgroundColor #FFFFFF
             fontColor #2496ED
             borderColor #2496ED
+        }
+
+        /' These colors have been taken from the GitHub styles'/
+        card<<ARCHIVED>> {
+            backgroundColor #FFF8C5
+            fontColor #9a6700
+            borderColor #bf8700
+        }
+
+        node<<UNKNOWN>> {
+            backgroundColor #fff1e5
+            fontColor #bc4c00
+            borderColor #bc4c00
         }
     }
     `
@@ -288,7 +297,7 @@ function createPlantUmlDiagram(plantumlJson) {
 
             nodes.forEach(node => {
                 if (node.repo) {
-                    plantuml += `card "${node.repo}" as ${node.repoSlug} {\n`
+                    plantuml += `card "${node.repo}" as ${node.repoSlug} ${archivedRepos.includes(node.repo) ? '<<ARCHIVED>>':''} {\n`
                 }
 
                 plantuml += `node "${node.image}" as ${node.imageSlug}`
@@ -384,7 +393,9 @@ plantumlForm.addEventListener('submit', event => {
     const blob = event.target.querySelector('textarea').value.trim()
     const plantumlJson = JSON.parse(blob)
 
-    codeForm.querySelector('textarea').value = createPlantUmlDiagram(plantumlJson)
+    const archivedRepos = JSON.parse(archivedForm.value.trim()).map(normalizeUrl)
+
+    codeForm.querySelector('textarea').value = createPlantUmlDiagram(plantumlJson, archivedRepos)
     codeForm.querySelector('button').attributes.removeNamedItem('disabled')
 })
 
