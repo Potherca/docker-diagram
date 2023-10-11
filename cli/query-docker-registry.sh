@@ -62,6 +62,8 @@ set -o pipefail # Return exit status of the last command in the pipe that exited
 : readonly "${CURL:=curl}"
 : readonly "${JQ:=jq}"
 
+: readonly -i "${EXIT_NOT_ENOUGH_PARAMETERS:=65}"
+
 usage() {
     local sScript sUsage
 
@@ -75,12 +77,6 @@ usage() {
 }
 
 query-docker-registry() {
-    local sList sOrganisation sPassword sTempDir sToken sUser
-
-    sUser="${1?Three parameters required: <username> <password> <organisation>}"
-    sPassword="${2?Three parameters required: <username> <password> <organisation>}"
-    sOrganisation="${3?Three parameters required: <username> <password> <organisation>}"
-
     call-url() {
         local sPaginationUrl sPrevious sUrl sResponse sResult sToken
 
@@ -199,6 +195,17 @@ query-docker-registry() {
 
         printf "{%s\n}\n" "${sContents:0:-1}" # Remove trailing comma
     }
+
+    if [[ "${#}" == "1" && ${1} == "" ]] || [[ ${1} == '-h' || ${1} == '--help' ]]; then
+        usage
+        exit "${EXIT_NOT_ENOUGH_PARAMETERS}"
+    fi
+
+    local sList sOrganisation sPassword sTempDir sToken sUser
+
+    readonly sUser="${1?Three parameters required: <username> <password> <organisation>}"
+    readonly sPassword="${2?Three parameters required: <username> <password> <organisation>}"
+    readonly sOrganisation="${3?Three parameters required: <username> <password> <organisation>}"
 
     # Cross-platform way to create a temporary directory.
     sTempDir=$(mktemp -d 2> /dev/null || mktemp -d -t 'dockerhub-fetch')
