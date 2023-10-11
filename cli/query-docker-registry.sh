@@ -78,15 +78,42 @@ query-docker-registry() {
     sPassword="${2?Three parameters required: <username> <password> <organisation>}"
     sOrganisation="${3?Three parameters required: <username> <password> <organisation>}"
 
+    call-url() {
+        local sPaginationUrl sPrevious sUrl sResponse sResult sToken
+
+        readonly sUrl="${1?Two parameter required: <url> <token> [previous-content]}"
+        readonly sToken="${2?Two parameter required: <url> <token> [previous-content]}"
+        readonly sPrevious="${3:-''}"
+
+        sResponse=$(curl -s -H "Authorization: JWT ${sToken}" "${sUrl}")
+        readonly sResponse
+
+        sPaginationUrl="$(echo "${sResponse}" | jq -r '.next')"
+        readonly sPaginationUrl
+
+        sResult=$(echo "${sResponse}" | jq -r '.results|.[] |.name')
+        readonly sResult
+
+        if [[ ${sPaginationUrl} == 'null' ]]; then
+            printf '%s\n%s' "${sPrevious}" "${sResult}"
+        else
+            call-url "${sPaginationUrl}" "${sToken}" "${sResult}"
+        fi
+    }
+
     fetchList() {
-        local sToken
+        local sUser sPassword sOrganisation sUrl
+
+        readonly sUser="${1?Three parameters required: <username> <password> <organization>}"
+        readonly sPassword="${2?Three parameters required: <username> <password> <organization>}"
+        readonly sOrganisation="${3?Three parameters required: <username> <password> <organization>}"
+
+        readonly sUrl="https://hub.docker.com/v2/repositories/${sOrganisation}/?page_size=100"
 
         sToken="$(fetchRegistryToken "${sUser}" "${sPassword}")"
+        readonly sToken
 
-        # @FIXME: Fetch all pages if there are more than 100 repositories.
-        curl -s -H "Authorization: JWT ${sToken}" \
-            "https://hub.docker.com/v2/repositories/${sOrganisation}/?page_size=100" \
-        | jq -r '.results|.[] |.name'
+        call-url "${sUrl}" "${sToken}"
     }
 
     fetchManifests() {
@@ -176,7 +203,7 @@ query-docker-registry() {
 
     # @FIXME: Add a trap to remove ${sTempDir}.
 
-    sList="$(fetchList)"
+    sList="$(fetchList "${sUser}" "${sPassword}" "${sOrganisation}")"
     fetchManifests "${sTempDir}" "${sList}"
     outputJSON "${sTempDir}"
 }
