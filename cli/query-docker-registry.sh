@@ -63,7 +63,7 @@ usage() {
     local sScript sUsage
 
     sScript="$(basename "$0")"
-    sUsage="$(grep '^##' <"$0" | cut -c4-)"
+    sUsage="$(grep '^##' < "$0" | cut -c4-)"
 
     readonly sScript
     readonly sUsage
@@ -98,9 +98,10 @@ query-docker-registry() {
     }
 
     fetchManifests() {
-        local sRepositoryList sName sRemaining sTotal
+        local sRepositoryList sName sRemaining sTempDir sToken sTotal
 
-        sRepositoryList="${1?One parameter required: <list>}"
+        readonly sTempDir="${1?Two parameters required: <temp-dir> <list>}"
+        readonly sRepositoryList="${2?Two parameters required: <temp-dir> <list>}"
 
         sTotal="$(echo "${sRepositoryList}" | wc -l)"
         sRemaining="${sTotal}"
@@ -113,12 +114,12 @@ query-docker-registry() {
             sToken="$(
                 curl -s \
                     "https://${sUser}:${sPassword}@auth.docker.io/token?service=registry.docker.io&scope=repository:${sOrganisation}/${sName}:pull" \
-                | jq -r .token
+                | jq -r '.token'
             )"
 
             curl \
-                -s \
-                -H "Authorization: Bearer ${sToken}" \
+                --header "Authorization: Bearer ${sToken}" \
+                --silent \
                 "https://index.docker.io/v2/${sOrganisation}/${sName}/manifests/latest" \
             > "${sTempDir}/${sName}.json"
         done < <(echo "${sRepositoryList}" | sort)
@@ -127,7 +128,9 @@ query-docker-registry() {
     }
 
     outputJSON() {
-        local sContents sFile sMatch
+        local sContents sFile sMatch sTempDir
+
+        sTempDir="${1?One parameter required: <temp-dir>}"
 
         sContents=''
 
@@ -142,7 +145,7 @@ query-docker-registry() {
                 #
                 # So instead `cat` is used, even thought this triggers shellcheck.
                 #
-                # The single slash trigger a false positive in shellcheck, so it
+                # The single slash triggers a false positive in shellcheck, so it
                 # is disabled for the line.
                 #
                 # See https://github.com/koalaman/shellcheck/issues/2639
@@ -161,17 +164,18 @@ query-docker-registry() {
     }
 
     # Cross-platform way to create a temporary directory.
-    sTempDir=$(mktemp -d 2>/dev/null || mktemp -d -t 'dockerhub-fetch')
+    sTempDir=$(mktemp -d 2> /dev/null || mktemp -d -t 'dockerhub-fetch')
+    readonly sTempDir
 
     # @FIXME: Add a trap to remove ${sTempDir}.
 
     sList="$(fetchList)"
-    fetchManifests "${sList}"
-    outputJSON
+    fetchManifests "${sTempDir}" "${sList}"
+    outputJSON "${sTempDir}"
 }
 
 if [[ ${BASH_SOURCE[0]} == "${0}" ]]; then
-    query-docker-registry "${@}"
+    query-docker-registry "${@:-}"
 else
     export -f query-docker-registry
 fi
