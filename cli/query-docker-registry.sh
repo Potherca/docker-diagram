@@ -59,6 +59,9 @@ set -o pipefail # Return exit status of the last command in the pipe that exited
 ##
 ## - ${TEMP_DIR}/<repository-name>.json
 
+: readonly "${CURL:=curl}"
+: readonly "${JQ:=jq}"
+
 usage() {
     local sScript sUsage
 
@@ -85,13 +88,13 @@ query-docker-registry() {
         readonly sToken="${2?Two parameter required: <url> <token> [previous-content]}"
         readonly sPrevious="${3:-''}"
 
-        sResponse=$(curl -s -H "Authorization: JWT ${sToken}" "${sUrl}")
+        sResponse=$("${CURL}" -s -H "Authorization: JWT ${sToken}" "${sUrl}")
         readonly sResponse
 
-        sPaginationUrl="$(echo "${sResponse}" | jq -r '.next')"
+        sPaginationUrl="$(echo "${sResponse}" | "${JQ}" -r '.next')"
         readonly sPaginationUrl
 
-        sResult=$(echo "${sResponse}" | jq -r '.results|.[] |.name')
+        sResult=$(echo "${sResponse}" | "${JQ}" -r '.results|.[] |.name')
         readonly sResult
 
         if [[ ${sPaginationUrl} == 'null' ]]; then
@@ -131,12 +134,12 @@ query-docker-registry() {
             echo -ne "\rFetching manifest ($((sTotal - sRemaining)) of ${sTotal}) ${sName}                    " >&2
 
             sToken="$(
-                curl -s \
+                "${CURL}" -s \
                     "https://${sUser}:${sPassword}@auth.docker.io/token?service=registry.docker.io&scope=repository:${sOrganisation}/${sName}:pull" \
-                | jq -r '.token'
+                | "${JQ}" -r '.token'
             )"
 
-            curl \
+            "${CURL}" \
                 --header "Authorization: Bearer ${sToken}" \
                 --silent \
                 "https://index.docker.io/v2/${sOrganisation}/${sName}/manifests/latest" \
@@ -152,13 +155,13 @@ query-docker-registry() {
         sUser="${1?Two parameters required: <username> <password>}"
         sPassword="${2?Two parameters required: <username> <password>}"
 
-        curl \
+        "${CURL}" \
             --data "$(printf '{"username": "%s", "password": "%s"}' "${sUser}" "${sPassword}")" \
             --header "Content-Type: application/json" \
             --request POST \
             --silent \
             'https://hub.docker.com/v2/users/login/' \
-            | jq -r '.token'
+            | "${JQ}" -r '.token'
     }
 
     outputJSON() {
