@@ -81,15 +81,7 @@ query-docker-registry() {
     fetchList() {
         local sToken
 
-        sToken="$(
-            curl \
-                -s \
-                -H "Content-Type: application/json" \
-                -X POST \
-                -d "$(printf '{"username": "%s", "password": "%s"}' "${sUser}" "${sPassword}")" \
-                'https://hub.docker.com/v2/users/login/' \
-            | jq -r .token
-        )"
+        sToken="$(fetchRegistryToken "${sUser}" "${sPassword}")"
 
         # @FIXME: Fetch all pages if there are more than 100 repositories.
         curl -s -H "Authorization: JWT ${sToken}" \
@@ -125,6 +117,21 @@ query-docker-registry() {
         done < <(echo "${sRepositoryList}" | sort)
 
         echo -ne "\r                                                                                                    \r" >&2
+    }
+
+    fetchRegistryToken() {
+        local sUser sPassword
+
+        sUser="${1?Two parameters required: <username> <password>}"
+        sPassword="${2?Two parameters required: <username> <password>}"
+
+        curl \
+            --data "$(printf '{"username": "%s", "password": "%s"}' "${sUser}" "${sPassword}")" \
+            --header "Content-Type: application/json" \
+            --request POST \
+            --silent \
+            'https://hub.docker.com/v2/users/login/' \
+            | jq -r '.token'
     }
 
     outputJSON() {
