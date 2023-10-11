@@ -58,6 +58,10 @@ Please report any issues or feedback by [opening an issue](https://github.com/Po
     └── README.md   <- This file
 ```
 
+## License
+
+This project is created by [Potherca](https://pother.ca) licensed under an [MPL-2.0 License](LICENSE).
+
 [maintained-shield]: https://img.shields.io/maintenance/yes/2023.svg
 [project-stage-badge: Development]: https://img.shields.io/badge/Project%20Stage-Development-yellowgreen.svg
 [project-stage-page]: https://blog.pother.ca/project-stages/
