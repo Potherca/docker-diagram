@@ -93,7 +93,7 @@ query-docker-registry() {
         sResult=$(echo "${sResponse}" | "${JQ}" -r '.results|.[] |.name')
         readonly sResult
 
-        if [[ ${sPaginationUrl} == 'null' ]]; then
+        if [[ "${sPaginationUrl}"  == 'null' ]]; then
             printf '%s\n%s' "${sPrevious}" "${sResult}"
         else
             call-url "${sPaginationUrl}" "${sToken}" "${sResult}"
@@ -161,9 +161,10 @@ query-docker-registry() {
     }
 
     outputJSON() {
-        local sContents sFile sMatch sTempDir
+        local sContents sFile sMatch sOrganisation sTempDir
 
-        sTempDir="${1?One parameter required: <temp-dir>}"
+        readonly sTempDir="${1?Two parameter required: <temp-dir> <organization>}"
+        readonly sOrganisation="${2?Two parameter required: <temp-dir> <organization>}"
 
         sContents=''
 
@@ -185,10 +186,11 @@ query-docker-registry() {
                 #
                 # shellcheck disable=SC2002
                 # shellcheck disable=SC1003
-                cat "${sFile}" \
+                { cat "${sFile}" \
                     | tr -d '\\' \
                     | grep -oE 'org.opencontainers.image.source":"[^"]+"' \
                     | cut -d'"' -f3
+                } || true
             )"
             sContents+="$(printf '\n\t"%s":"%s",' "${sOrganisation}/$(basename "${sFile}" '.json')" "${sMatch}")"
         done
@@ -215,7 +217,7 @@ query-docker-registry() {
 
     sList="$(fetchList "${sUser}" "${sPassword}" "${sOrganisation}")"
     fetchManifests "${sTempDir}" "${sList}"
-    outputJSON "${sTempDir}"
+    outputJSON "${sTempDir}" "${sOrganisation}"
 }
 
 if [[ ${BASH_SOURCE[0]} == "${0}" ]]; then
