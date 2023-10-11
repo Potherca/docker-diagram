@@ -1,5 +1,76 @@
 #!/usr/bin/env bash
 
+# ==============================================================================
+# Mozilla Public License Version 2.0
+#
+# Copyright (C) 2023 Potherca
+#
+# This Source Code Form is subject to the terms of the Mozilla Public License,
+# v. 2.0. If a copy of the MPL was not distributed with this file, You can
+# obtain one at https://mozilla.org/MPL/2.0/.
+# ==============================================================================
+# There are a few standards this code tries to adhere to, these are listed below.
+#
+# - Code follows the BASH style-guide described at:
+#   http://guides.dealerdirect.io/code-styling/bash/
+#
+# - Variables are named using an adaption of Systems Hungarian explained at:
+#   http://blog.pother.ca/VariableNamingConvention
+#
+# ==============================================================================
+
+set -o errexit  # Exit script when a command exits with non-zero status.
+set -o errtrace # Exit on error inside any functions or sub-shells.
+set -o nounset  # Exit script on use of an undefined variable.
+set -o pipefail # Return exit status of the last command in the pipe that exited with a non-zero exit code
+
+# ==============================================================================
+#               List which Docker images come from which Repositories
+# ------------------------------------------------------------------------------
+## This script fetches a list of available docker repositories from a docker
+## registry. This list is then used to fetch the manifest for all images in the
+## registry. (These manifests are stored in temporary files)
+##
+## Currently, the script only works for Docker Hub, and the Docker Hub API. It
+## has been hard-coded to use hub.docker.com, auth.docker.io, and index.docker.io
+##
+## Usage: $0 <username> <password> <organization>
+##
+## Where:
+##       - <username> is the username of the user to authenticate with.
+##       - <password> is the password of the user to authenticate with.
+##       - <organization> is the organization to fetch the repositories for.
+##
+## Usage example:
+##
+##   bash query-docker-registry.sh 'peter-gibbons' '7$aRJFHbSo93e5@Z' 'initech'
+##
+## The script requires the following tools to be installed:
+##
+## - curl
+## - jq
+##
+## The cUrl and jq executable can be overridden by setting their respective
+## environmental variable before calling this script:
+##
+##        CURL=/usr/local/curl JQ=/usr/local/jq $0 <username> <password> <organization>
+##
+## The script will create the following files:
+##
+## - ${TEMP_DIR}/<repository-name>.json
+
+usage() {
+    local sScript sUsage
+
+    sScript="$(basename "$0")"
+    sUsage="$(grep '^##' <"$0" | cut -c4-)"
+
+    readonly sScript
+    readonly sUsage
+
+    echo -e "${sUsage//\$0/${sScript}}"
+}
+
 query-docker-registry() {
     local sList sOrganisation sPassword sTempDir sToken sUser
 
