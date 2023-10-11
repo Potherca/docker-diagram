@@ -12,6 +12,23 @@ When creating docker containers, it is not uncommon to have several low-level "b
 
 It would be nice to see which images extend which. This project aims to do that.
 
+## Background
+
+There are two ways to create a diagram of which docker image extends which.
+
+1. `grep` Dockerfiles to find `FROM` and `--from` entries
+2. Read from Docker Registry API and use Image Labels
+
+With the first method, the name of the repository is known, but not the name of the image.
+With the second method, the name of the image is known, but not the name of the repository.
+
+Combining both methods yields a result in which both are available.
+
+## Install
+
+Download the BASH scripts in `cli/` so they can run locally.
+This can be done by cloning the repository, or by downloading the scripts individually.
+
 ## Usage
 
 Gathering the required data and creating the diagram, have been split into separate steps. The scripts in `cli/` are meant to be run locally.
@@ -26,6 +43,20 @@ In order to create a diagram, the following steps need to be taken:
 4. View the resulting diagram.
 
 Optionally, the JSON and diagram code can be manually edited to make corrections or add additional information.
+
+## Contributing
+
+Please report any issues or feedback by [opening an issue](https://github.com/Potherca/docker-diagram/issues) or reaching out to [@potherca](https://twitter.com/potherca) in Twitter.
+
+### Development
+
+```
+    .
+    ├── cli/        <- Scripts to run the application
+    ├── docs/       <- Documentation
+    ├── web/        <- Web application
+    └── README.md   <- This file
+```
 
 [maintained-shield]: https://img.shields.io/maintenance/yes/2023.svg
 [project-stage-badge: Development]: https://img.shields.io/badge/Project%20Stage-Development-yellowgreen.svg
